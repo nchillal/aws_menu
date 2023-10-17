@@ -53,15 +53,14 @@ func PrintAwsProfileMenu() (string, error) {
 	return awsProfile, nil
 }
 
-func ListAWSRegions(awsProfile string) []string {
+func ListAWSRegions(awsProfile string) ([]string, error) {
 	// Load AWS SDK configuration
 	cfg, err := config.LoadDefaultConfig(
 		context.TODO(),
 		config.WithSharedConfigProfile(awsProfile),
 	)
 	if err != nil {
-		fmt.Println("Error loading AWS SDK configuration:", err)
-		return nil
+		return []string{}, nil
 	}
 
 	// Create an EC2 client
@@ -70,8 +69,7 @@ func ListAWSRegions(awsProfile string) []string {
 	// Call DescribeRegions to get a list of regions
 	resp, err := ec2Client.DescribeRegions(context.TODO(), &ec2.DescribeRegionsInput{})
 	if err != nil {
-		fmt.Println("Error describing regions:", err)
-		return nil
+		return []string{}, nil
 	}
 
 	// Get list of regions
@@ -79,12 +77,14 @@ func ListAWSRegions(awsProfile string) []string {
 	for _, region := range resp.Regions {
 		regions = append(regions, *region.RegionName)
 	}
-	return regions
+	return regions, nil
 }
 
 func PrintAwsRegionMenu(awsProfile string) (string, error) {
-	regions := ListAWSRegions(awsProfile)
-
+	regions, err := ListAWSRegions(awsProfile)
+	if err != nil {
+		fmt.Println(err)
+	}
 	regionSearcher := func(input string, index int) bool {
 		region := regions[index]
 		name := strings.Replace(strings.ToLower(region), " ", "", -1)
